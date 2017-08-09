@@ -15,11 +15,14 @@ def channel(CSin, CSout, CRin, CRout, Sin, Rin, Precision):
 
     packet1 = packet(int('0x497E', 16), "dataPacket", 0, 512, "Testing some stuff")
     print(hex(packet1.checksum))
+
     return None
 
 
 if __name__ == '__main__':
-    print(sys.argv)
+    channel(5,5,5,5,5,5,5)
+    # uncomment below to get command line args working again
+    """
     if len(sys.argv) != 8:
         print("Invalid command.")
         print("Usage: channel.py [CSin port] [CSout port] [CRin port] [CRout port] {Sin port] [Rin port] [Precision]")
@@ -33,3 +36,4 @@ if __name__ == '__main__':
         Precision = sys.argv[7]
 
         channel(CSin, CSout, CRin, CRout, Sin, Rin, Precision)
+    """
