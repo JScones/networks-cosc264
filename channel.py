@@ -20,7 +20,7 @@ def channel(CSin, CSout, CRin, CRout, Sin, Rin, Precision):
 
 
 if __name__ == '__main__':
-    channel(5,5,5,5,5,5,5)
+    channel(1,2,3,4,5,6,7)
     # uncomment below to get command line args working again
     """
     if len(sys.argv) != 8:
