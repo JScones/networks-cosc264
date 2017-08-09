@@ -8,9 +8,13 @@
 
 import socket
 import sys
+from packet import packet
+
 
 def channel(CSin, CSout, CRin, CRout, Sin, Rin, Precision):
 
+    packet1 = packet("0x497E", "dataPacket", 0, 512, "Testing some stuff")
+    print(packet1.magicno)
     return None
 
 
@@ -28,4 +32,4 @@ if __name__ == '__main__':
         Rin = sys.argv[6]
         Precision = sys.argv[7]
 
-        channel(CSin, CSout, CRint, CRout, Sin, Rin, Precision)
+        channel(CSin, CSout, CRin, CRout, Sin, Rin, Precision)
