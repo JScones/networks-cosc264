@@ -3,9 +3,23 @@
     """
 
 class packet(object):
-    def __init__(self, magicno, pacType, seqno, dataLen, data):
+    def __init__(self, magicno, pac_type, seqno, data_len, data):
         self.magicno = magicno
-        self.pacType = pacType
+        self.pac_type = pac_type
         self.seqno = seqno
-        self.dataLen = dataLen
+        self.data_len = data_len
         self.data = data
+        self.checksum = self.calculate_checksum()
+
+
+    def calculate_checksum(self):
+        pac_type_bytes = bytearray(self.pac_type, 'utf8')
+        data_bytes = bytearray(self.data, 'utf8')
+
+        checksum = self.magicno + self.seqno + self.data_len
+        for x in pac_type_bytes:
+            checksum += x
+        for x in data_bytes:
+            checksum += x
+
+        return checksum

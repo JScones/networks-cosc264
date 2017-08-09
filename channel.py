@@ -13,8 +13,8 @@ from packet import packet
 
 def channel(CSin, CSout, CRin, CRout, Sin, Rin, Precision):
 
-    packet1 = packet("0x497E", "dataPacket", 0, 512, "Testing some stuff")
-    print(packet1.magicno)
+    packet1 = packet(int('0x497E', 16), "dataPacket", 0, 512, "Testing some stuff")
+    print(hex(packet1.checksum))
     return None
 
 
