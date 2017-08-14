@@ -4,6 +4,8 @@
              James Toohey    27073776
 """
 
+from struct import *
+
 
 def check_ports(*ports):
     """ Returns True if there are no duplicate ports and if all
@@ -21,3 +23,18 @@ def check_ports(*ports):
             all_clear = False
 
     return all_clear
+
+
+def pack_data(packet):
+    packed = pack('!2I3i' + str(packet.data_len) + 's',
+                  packet.magicno, packet.checksum, packet.pac_type, packet.seqno, packet.data_len, packet.data)
+    return packed
+
+
+def unpack_data(packet):
+
+    header = unpack('!2I3i', packet[:20])
+    data_len = header[4]
+    data = unpack(str(data_len) + 's', packet[20:])
+
+    return header, data[0]

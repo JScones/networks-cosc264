@@ -2,28 +2,39 @@
     Not too sure what I'm doing
 
     Example usage:
-    packet1 = packet(int('0x497E', 16), "dataPacket", 0, 512, "Testing some stuff")
+    packet1 = packet(0, 0, 512, "Testing some stuff")
     print(hex(packet1.checksum))
     """
 
-class packet(object):
-    def __init__(self, magicno, pac_type, seqno, data_len, data):
-        self.magicno = magicno
-        self.pac_type = pac_type
-        self.seqno = seqno
-        self.data_len = data_len
-        self.data = data
-        self.checksum = self.calculate_checksum()
+from helpers import *
 
+
+class Packet(object):
+
+    def __init__(self, pac_type, seqno, data_len, data):
+        self.magicno = 0x497E
+        self.pac_type = pac_type  # integer, 0 = dataPacket, 1 = acknowledgementPacket
+        self.seqno = seqno  # integer
+        self.data_len = data_len  # integer
+        self.checksum = self.calculate_checksum() # hex number
+        self.data = data  # string
 
     def calculate_checksum(self):
-        pac_type_bytes = bytearray(self.pac_type, 'utf8')
-        data_bytes = bytearray(self.data, 'utf8')
 
-        checksum = self.magicno + self.seqno + self.data_len
-        for x in pac_type_bytes:
-            checksum += x
-        for x in data_bytes:
-            checksum += x
+        checksum = self.magicno + self.pac_type + self.seqno + self.data_len
 
         return checksum
+
+"""
+# uncomment to demonstrate packets :)
+if __name__ == "__main__":
+
+    packet1 = Packet(0, 0, 4, 'test'.encode('utf-8'))
+    print(packet1.checksum)
+    print(hex(packet1.checksum))
+    packed_data = pack_data(packet1)
+    print(packed_data)
+    header, data = unpack_data(packed_data)
+    print(header)
+    print(data.decode())
+"""

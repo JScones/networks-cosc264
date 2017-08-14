@@ -15,8 +15,9 @@
 
 import socket
 import sys
-from packet import packet
-from helpers import check_ports
+import select
+from packet import Packet
+from helpers import *
 
 
 def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Precision):
@@ -34,7 +35,7 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
     CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    try:
+    try: # Catching errors binding the ports
         print("Binding port CSin")
         CSin.bind(('localhost', CSin_port))
         print("CSin successfully bound\n")
@@ -50,10 +51,16 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
         sys.exit()
 
     CRin.listen()
+    CRin, _ = CRin.accept()
 
-    c = 0
-    while c == 0:
-        c = input("Waiting")
+    readable, _, _ = select.select([CRin],[],[])
+
+    if readable:
+        in_packet, address = CRin.recvfrom(1024)
+        header, data = unpack_data(in_packet)
+        print(data.decode())
+
+    input("Press enter to exit")
 
     return None
 

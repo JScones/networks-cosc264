@@ -17,7 +17,8 @@
 
 import socket
 import sys
-from helpers import check_ports
+from helpers import *
+from packet import Packet
 
 
 def receiver(Rin_port, Rout_port, CRin_port, filename):
@@ -53,7 +54,10 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
     except socket.error as msg:
         print("Connect failed. Exiting\n Error: " + str(msg))
         sys.exit()
-    
+
+    packet1 = Packet(0, 0, 18, b"Testing some stuff")
+    packed_data = pack_data(packet1)
+    CRin.send(packed_data)
 
 
     return None
