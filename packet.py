@@ -1,5 +1,9 @@
 """ A test class for packets.
     Not too sure what I'm doing
+
+    Example usage:
+    packet1 = packet(int('0x497E', 16), "dataPacket", 0, 512, "Testing some stuff")
+    print(hex(packet1.checksum))
     """
 
 class packet(object):

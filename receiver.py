@@ -2,6 +2,15 @@
 
     Does nothing yet.
 
+    CSin_port = 7001
+    CSout_port = 7002
+    CRin_port = 7003
+    CRout_port = 7004
+    Sin_port = 7005
+    Sout_port = 7006
+    Rin_port = 7007
+    Rout_port = 7008
+
     Authors: Josh Bernasconi 68613585
              James Toohey    27073776
 """
@@ -23,6 +32,8 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
 
     Rin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     Rout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 
     try:
         print("Binding port Rin")
@@ -37,12 +48,12 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
 
     try:
         print("Connecting Rout to CRin")
-        Rout.connect(('localhost', CRin_port))
+        CRin.connect(('localhost', CRin_port))
         print("Connection successful\n")
     except socket.error as msg:
         print("Connect failed. Exiting\n Error: " + str(msg))
         sys.exit()
-
+    
 
 
     return None
@@ -50,4 +61,4 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
 
 if __name__ == '__main__':
     print(sys.argv)
-    receiver(5555, 5556, 7777, "Nothing yet")
+    receiver(7007, 7008, 7003, "Nothing yet")

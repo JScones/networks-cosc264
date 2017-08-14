@@ -2,6 +2,13 @@
 
     Does nothing yet.
 
+    CSin_port = 7001
+    CSout_port = 7002
+    CRin_port = 7003
+    CRout_port = 7004
+    Sin_port = 7005
+    Rin_port = 7006
+
     Authors: Josh Bernasconi 68613585
              James Toohey    27073776
 """
@@ -9,18 +16,50 @@
 import socket
 import sys
 from packet import packet
+from helpers import check_ports
 
 
-def channel(CSin, CSout, CRin, CRout, Sin, Rin, Precision):
+def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Precision):
 
-    packet1 = packet(int('0x497E', 16), "dataPacket", 0, 512, "Testing some stuff")
-    print(hex(packet1.checksum))
+    ports_ok = check_ports(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port)
+
+    if ports_ok:
+        print("Port numbers all valid\n")
+    else:
+        print("There is a problem with the supplied port numbers!\n Exiting")
+        sys.exit()
+
+    CSin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    CSout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    CRout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    try:
+        print("Binding port CSin")
+        CSin.bind(('localhost', CSin_port))
+        print("CSin successfully bound\n")
+        print("Binding port CSout")
+        CSout.bind(('localhost', CSout_port))
+        print("CSout successfully bound\n")
+        CRin.bind(('localhost', CRin_port))
+        print("CRin successfully bound\n")
+        CRout.bind(('localhost', CRout_port))
+        print("CRout successfully bound")
+    except socket.error as msg:
+        print("Bind failed. Exiting.\n Error: " + str(msg))
+        sys.exit()
+
+    CRin.listen()
+
+    c = 0
+    while c == 0:
+        c = input("Waiting")
 
     return None
 
 
 if __name__ == '__main__':
-    channel(1,2,3,4,5,6,7)
+    channel(7001,7002,7003,7004,7005,7007,1)
     # uncomment below to get command line args working again
     """
     if len(sys.argv) != 8:
