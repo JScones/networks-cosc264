@@ -25,8 +25,7 @@ class Packet(object):
 
         return checksum
 
-"""
-# uncomment to demonstrate packets :)
+
 if __name__ == "__main__":
 
     packet1 = Packet(0, 0, 4, 'test'.encode('utf-8'))
@@ -37,4 +36,3 @@ if __name__ == "__main__":
     header, data = unpack_data(packed_data)
     print(header)
     print(data.decode())
-"""

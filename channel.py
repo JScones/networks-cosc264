@@ -51,14 +51,24 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
         sys.exit()
 
     CRin.listen()
+    CSin.listen()
+
     CRin, _ = CRin.accept()
+    CSin, _ = CSin.accept()
 
-    readable, _, _ = select.select([CRin],[],[])
+    while True:
 
-    if readable:
-        in_packet, address = CRin.recvfrom(1024)
-        header, data = unpack_data(in_packet)
-        print(data.decode())
+        readable, _, _ = select.select([CRin, CSin],[],[])
+
+        if len(readable) != 0:
+            for sock in readable:
+                in_packet, address = sock.recvfrom(1024)
+                if len(in_packet) != 0:
+                    header, data = unpack_data(in_packet)
+                    print(data.decode())
+        readable = []
+
+        input("Pausing loop, press enter to step")
 
     input("Press enter to exit")
 
