@@ -6,18 +6,19 @@
     print(hex(packet1.checksum))
     """
 
-from helpers import *
-
 
 class Packet(object):
 
-    def __init__(self, pac_type, seqno, data_len, data):
+    def __init__(self, pac_type, seqno, data_len, data, checksum=0):
         self.magicno = 0x497E
         self.pac_type = pac_type  # integer, 0 = dataPacket, 1 = acknowledgementPacket
         self.seqno = seqno  # integer
         self.data_len = data_len  # integer
-        self.checksum = self.calculate_checksum() # hex number
+        self.checksum = checksum # hex number
         self.data = data  # string
+
+        if self.checksum == 0:
+            self.checksum = self.calculate_checksum()
 
     def calculate_checksum(self):
 

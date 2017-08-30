@@ -54,13 +54,13 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
         print("Connect failed. Exiting\n Error: " + str(msg))
         sys.exit()
 
-    packet1 = Packet(0, 0, 25, b"Testing sender to channel")
+    packet1 = Packet(0, 0, 25, b"Testing sender to channel", 0)
     packed_data = pack_data(packet1)
     Sout.send(packed_data)
 
     time.sleep(5)
 
-    packet1 = Packet(0, 0, 13, b"Second packet")
+    packet1 = Packet(0, 0, 13, b"Second packet", 0)
     packed_data = pack_data(packet1)
     Sout.send(packed_data)
 

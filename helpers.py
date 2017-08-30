@@ -5,6 +5,7 @@
 """
 
 from struct import *
+from packet import Packet
 
 
 def check_ports(*ports):
@@ -15,10 +16,10 @@ def check_ports(*ports):
     all_clear = True
     set_ports = set(ports)
 
-    if len(ports) != len(set_ports): #Check for duplicate ports
+    if len(ports) != len(set_ports): # Check for duplicate ports
         all_clear = False
 
-    for port in ports: #check each port is within acceptable port range
+    for port in ports: # check each port is within acceptable port range
         if port < 1024 or port > 64000 or not (isinstance(port, int)):
             all_clear = False
 
@@ -31,11 +32,34 @@ def pack_data(packet):
     return packed
 
 
-def unpack_data(packet):
-    #print(packet)
+def get_header(packet):
     header = unpack('!2I3i', packet[:20])
-    #print(header)
-    data_len = header[4]
+
+    return header
+
+
+def get_data(packet, data_len):
     data = unpack(str(data_len) + 's', packet[20:20+data_len])
 
-    return header, data[0]
+    return data
+
+
+def get_packets(in_data):
+
+    packets = []
+
+    while in_data != b'':
+        header = get_header(in_data)
+        magic_no = header[0]
+        checksum = header[1]
+        pac_type = header[2]
+        seq_no = header[3]
+        data_len = header[4]
+        data = get_data(in_data, data_len)
+
+        temp_packet = Packet(pac_type, seq_no, data_len, data, checksum)
+        packets.append(temp_packet)
+
+        in_data = in_data[20+data_len:]
+
+    return packets

@@ -64,8 +64,8 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
             for sock in readable:
                 in_packet, address = sock.recvfrom(1024)
                 if len(in_packet) != 0:
-                    header, data = unpack_data(in_packet)
-                    print(data.decode())
+                    packets = get_packets(in_packet)
+                    print(packets)
         readable = []
 
         temp = input("Pausing loop, press enter to step")

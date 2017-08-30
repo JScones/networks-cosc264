@@ -56,7 +56,7 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
         print("Connect failed. Exiting\n Error: " + str(msg))
         sys.exit()
 
-    packet1 = Packet(0, 0, 27, b"Testing receiver to channel")
+    packet1 = Packet(0, 0, 27, b"Testing receiver to channel", 0)
     packed_data = pack_data(packet1)
     Rout.send(packed_data)
 
