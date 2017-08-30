@@ -19,7 +19,7 @@ def check_ports(*ports):
         all_clear = False
 
     for port in ports: #check each port is within acceptable port range
-        if port < 1024 or port > 64000 or port != int:
+        if port < 1024 or port > 64000 or not (isinstance(port, int)):
             all_clear = False
 
     return all_clear

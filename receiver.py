@@ -35,7 +35,7 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
     Rout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-
+    # Binding
     try:
         print("Binding port Rin")
         Rin.bind(('localhost', Rin_port))
@@ -47,6 +47,7 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
         print("Bind failed. Exiting.\n Error: " + str(msg))
         sys.exit()
 
+    # Connecting
     try:
         print("Connecting Rout to CRin")
         Rout.connect(('localhost', CRin_port))
