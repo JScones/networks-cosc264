@@ -50,8 +50,8 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
         print("Bind failed. Exiting.\n Error: " + str(msg))
         sys.exit()
 
-    CRin.listen()
-    CSin.listen()
+    CRin.listen(50)
+    CSin.listen(50)
 
     CRin, _ = CRin.accept()
     CSin, _ = CSin.accept()
@@ -68,10 +68,16 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
                     print(data.decode())
         readable = []
 
-        input("Pausing loop, press enter to step")
+        temp = input("Pausing loop, press enter to step")
+        if temp == "b":
+            break;
 
-    input("Press enter to exit")
+    temp = input("Press enter to exit")
 
+    CSin.close()
+    CSout.close()
+    CRin.close()
+    CRout.close()
     return None
 
 

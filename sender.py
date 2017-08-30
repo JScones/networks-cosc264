@@ -64,6 +64,10 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
     packed_data = pack_data(packet1)
     Sout.send(packed_data)
 
+    Sin.close()
+    Sout.close()
+    CSin.close()
+
 if __name__ == '__main__':
     sender(7005, 7006, 7001, "Filename here")
     print(sys.argv)

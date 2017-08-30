@@ -32,9 +32,10 @@ def pack_data(packet):
 
 
 def unpack_data(packet):
-    print(packet)
+    #print(packet)
     header = unpack('!2I3i', packet[:20])
+    #print(header)
     data_len = header[4]
-    data = unpack(str(data_len) + 's', packet[20:])
+    data = unpack(str(data_len) + 's', packet[20:20+data_len])
 
     return header, data[0]

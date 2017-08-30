@@ -59,6 +59,10 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
     packed_data = pack_data(packet1)
     Rout.send(packed_data)
 
+    Rin.close()
+    Rout.close()
+    CRin.close()
+
 
     return None
 
