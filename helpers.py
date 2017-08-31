@@ -50,6 +50,7 @@ def get_packets(in_data):
 
     while in_data != b'':
         header = get_header(in_data)
+        # print(header)
         magic_no = header[0]
         checksum = header[1]
         pac_type = header[2]
@@ -57,9 +58,32 @@ def get_packets(in_data):
         data_len = header[4]
         data = get_data(in_data, data_len)
 
-        temp_packet = Packet(pac_type, seq_no, data_len, data, checksum)
-        packets.append(temp_packet)
+        # temp_packet = Packet
 
-        in_data = in_data[20+data_len:]
+        if magic_no != 0x497E:
+            print("MAGIC NUMBER != 0x497E, dropping packet.")
+        else:
+            temp_packet = Packet(pac_type, seq_no, data_len, data, checksum)
+            packets.append(temp_packet)
+
+            in_data = in_data[20+data_len:]
 
     return packets
+
+def get_packet(in_data):
+    """GETS A SINGLE PACKET INSTEAD OF A LIST OF PACKETS"""
+    valid_packet = True
+
+    header = get_header(in_data)
+    magic_no = header[0]
+    checksum = header[1]
+    pac_type = header[2]
+    seq_no = header[3]
+    data_len = header[4]
+    data = get_data(in_data, data_len)
+
+    if magic_no != 0x497E:
+        valid_packet = False
+    packet = Packet(pac_type, seq_no, data_len, data, checksum)
+
+    return packet, valid_packet, pac_type

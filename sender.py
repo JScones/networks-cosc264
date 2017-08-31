@@ -23,6 +23,7 @@ import time
 
 
 def sender(Sin_port, Sout_port, CSin_port, filename):
+    print("SENDER\n")
     ports_ok = check_ports(Sin_port, Sout_port, CSin_port)
 
     if ports_ok:
@@ -60,9 +61,9 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
 
     time.sleep(5)
 
-    packet1 = Packet(0, 0, 13, b"Second packet", 0)
-    packed_data = pack_data(packet1)
-    Sout.send(packed_data)
+    # packet1 = Packet(0, 0, 13, b"Second packet", 0)
+    # packed_data = pack_data(packet1)
+    # Sout.send(packed_data)
 
     Sin.close()
     Sout.close()

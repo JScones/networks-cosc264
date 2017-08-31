@@ -21,6 +21,7 @@ from helpers import *
 
 
 def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Precision):
+    print("CHANNEL\n")
 
     ports_ok = check_ports(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port)
 
@@ -57,23 +58,41 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
     CSin, _ = CSin.accept()
 
     while True:
+        readable, _, _ = select.select([CSin], [], [])
+        for sock in readable:
+            data_in, address = sock.recvfrom(1024)
+            rcvd, valid_packet, _ = get_packet(data_in)
+            if not valid_packet:
+                 print("Packet magic number != 0x497E, dropping packet.\n")
+            else:
+                # Random variant for packet loss and bit errors to be implemented
+                packed_data = pack_data(rcvd)
+                CRout.send(rcvd)
+        exit = input("Type EC to exit channel")
+        if exit == "EC":
+            break
+        temp = input("Press enter to exit")
+
+    """ SCONZ CODE FROM LAST USE
+    while True:
 
         readable, _, _ = select.select([CRin, CSin],[],[])
 
         if len(readable) != 0:
             for sock in readable:
+                #print(sock)
                 in_packet, address = sock.recvfrom(1024)
                 if len(in_packet) != 0:
-                    packets = get_packets(in_packet)
-                    print(packets)
+                    header, data = unpack_data(in_packet)
+                    print("header = "+ str(header))
+                    #print(data.decode())
         readable = []
 
         temp = input("Pausing loop, press enter to step")
         if temp == "b":
             break;
-
     temp = input("Press enter to exit")
-
+    """
     CSin.close()
     CSout.close()
     CRin.close()

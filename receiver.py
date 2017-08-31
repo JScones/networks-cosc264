@@ -17,12 +17,13 @@
 
 import socket
 import sys
+import select
 from helpers import *
 from packet import Packet
 
 
 def receiver(Rin_port, Rout_port, CRin_port, filename):
-
+    print("REVEIVER\n")
     ports_ok = check_ports(Rin_port, Rout_port, CRin_port)
 
     if ports_ok:
@@ -34,6 +35,9 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
     Rin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     Rout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    file = open(filename, "w")
+    expected = 0
 
     # Binding
     try:
@@ -56,14 +60,38 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
         print("Connect failed. Exiting\n Error: " + str(msg))
         sys.exit()
 
+    while True: # while the empty packet has not been found
+        readable, _, _ = select.select([CRin], [], [])
+        if len(readable) == 1:
+            data_in, address = readable[0].recvfrom(1024)
+            rcvd, valid_packet, pac_type = get_packet(data_in)
+            if not valid_packet:
+                print("Different magic number stop processing\n")
+            elif pac_type != 1:
+                print("Pack type not dataPacket, stop processing\n")
+
+            # Preparing acknowledgement packets.
+            elif rcvd.seqno != expected:
+                acknowledgement_packet = Packet(1, rcvd.seqno, 0, "idk") # Still needs a data parameter. Page 6
+                # send acknowledgement_packet.
+            elif rcvd.seqno == expected:
+                acknowledgement_packet = Packet(1, rcvd.seqno, 0, "")
+                # send acknowledgement_packet.
+            elif rcvd.data_len > 0:
+                file.write(rcvd.data)
+            elif rcvd.data_len > 0:
+                Rin.close()
+                Rout.close()
+                CRin.close()
+                break
+
+
+
+
+    """
     packet1 = Packet(0, 0, 27, b"Testing receiver to channel", 0)
     packed_data = pack_data(packet1)
-    Rout.send(packed_data)
-
-    Rin.close()
-    Rout.close()
-    CRin.close()
-
+    Rout.send(packed_data)"""
 
     return None
 
