@@ -48,16 +48,18 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
         sys.exit()
 
     try:
-        print("Connecting Rout to CRin")
+        print("Connecting Sout to CSin")
         Sout.connect(('localhost', CSin_port))
         print("Connection successful\n")
     except socket.error as msg:
         print("Connect failed. Exiting\n Error: " + str(msg))
         sys.exit()
+        
 
-    packet1 = Packet(0, 0, 25, "Testing sender to channel", 0)
+    packet1 = Packet(1, 0, 25, "Testing sender to reciever", 0)
     packed_data = pack_data(packet1)
     Sout.send(packed_data)
+    print("Packet sent")
 
     time.sleep(5)
 

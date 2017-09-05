@@ -36,7 +36,7 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
     Rout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    file = open(filename, "w")
+    file = open(filename, "a")
     expected = 0
 
     # Binding
@@ -50,25 +50,28 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
     except socket.error as msg:
         print("Bind failed. Exiting.\n Error: " + str(msg))
         sys.exit()
+        
+    Rin.listen(50)
+    Rin, _ = Rin.accept()
 
     # Connecting
-    try:
+    '''try:
         print("Connecting Rout to CRin")
         Rout.connect(('localhost', CRin_port))
         print("Connection successful\n")
     except socket.error as msg:
         print("Connect failed. Exiting\n Error: " + str(msg))
-        sys.exit()
+        sys.exit()'''
 
     while True: # while the empty packet has not been found
-        readable, _, _ = select.select([CRin], [], [])
+        readable, _, _ = select.select([Rin], [], [])
         if len(readable) == 1:
             data_in, address = readable[0].recvfrom(1024)
             rcvd, valid_packet, pac_type = get_packet(data_in)
             if not valid_packet:
                 print("Different magic number stop processing\n")
             elif pac_type != 1:
-                print("Pack type not dataPacket, stop processing\n")
+                print("Packet type not dataPacket, stop processing\n")
 
             # Preparing acknowledgement packets.
             elif rcvd.seqno != expected:
@@ -77,9 +80,10 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
             elif rcvd.seqno == expected:
                 acknowledgement_packet = Packet(1, rcvd.seqno, 0, "")
                 # send acknowledgement_packet.
-            elif rcvd.data_len > 0:
+            if rcvd.data_len > 0:
+                print(rcvd.data)
                 file.write(rcvd.data)
-            elif rcvd.data_len > 0:
+            else:
                 Rin.close()
                 Rout.close()
                 CRin.close()
@@ -98,4 +102,4 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
 
 if __name__ == '__main__':
     print(sys.argv)
-    receiver(7007, 7008, 7003, "Nothing yet")
+    receiver(7007, 7008, 7003, "out.txt")

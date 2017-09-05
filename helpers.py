@@ -56,7 +56,7 @@ def get_packets(in_data):
         seq_no = header[3]
         data_len = header[4]
         data = get_data(in_data, data_len)
-        print(data)
+        # print(data)
 
         # temp_packet = Packet
 
@@ -73,11 +73,9 @@ def get_packets(in_data):
 def get_packet(in_data):
     """GETS A SINGLE PACKET INSTEAD OF A LIST OF PACKETS"""
     valid_packet = True
-
     packet = get_packets(in_data)[0]
 
     if packet.magicno != 0x497E:
         valid_packet = False
-
 
     return packet, valid_packet, packet.pac_type

@@ -46,26 +46,35 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
         CRin.bind(('localhost', CRin_port))
         print("CRin successfully bound\n")
         CRout.bind(('localhost', CRout_port))
-        print("CRout successfully bound")
+        print("CRout successfully bound\n")
     except socket.error as msg:
         print("Bind failed. Exiting.\n Error: " + str(msg))
         sys.exit()
 
-    CRin.listen(50)
+    # CRin.listen(50)
     CSin.listen(50)
 
-    CRin, _ = CRin.accept()
+    # CRin, _ = CRin.accept()
     CSin, _ = CSin.accept()
 
-    while True:
+    try:
+        print("Connecting CRout to Rin")
+        CRout.connect(('localhost', Rin_port))
+        print("Connection successful\n")
+    except socket.error as msg:
+        print("Connect failed. Exiting\n Error: " + str(msg))
+        sys.exit()    
+
+    while True: # while CRin doesnt recieve terminating packet
         readable, _, _ = select.select([CSin], [], [])
         for sock in readable:
             data_in, address = sock.recvfrom(1024)
             rcvd, valid_packet, _ = get_packet(data_in)
             if not valid_packet:
-                 print("Packet magic number != 0x497E, dropping packet.\n")
+                print("Packet magic number != 0x497E, dropping packet.\n")
             else:
                 # Random variant for packet loss and bit errors to be implemented
+                print("Channel sending packet")
                 CRout.send(pack_data(rcvd))
         exit = input("Type EC to exit channel")
         if exit == "EC":
