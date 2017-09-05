@@ -66,8 +66,7 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
                  print("Packet magic number != 0x497E, dropping packet.\n")
             else:
                 # Random variant for packet loss and bit errors to be implemented
-                packed_data = pack_data(rcvd)
-                CRout.send(rcvd)
+                CRout.send(pack_data(rcvd))
         exit = input("Type EC to exit channel")
         if exit == "EC":
             break

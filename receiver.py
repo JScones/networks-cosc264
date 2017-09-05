@@ -23,7 +23,7 @@ from packet import Packet
 
 
 def receiver(Rin_port, Rout_port, CRin_port, filename):
-    print("REVEIVER\n")
+    print("RECEIVER\n")
     ports_ok = check_ports(Rin_port, Rout_port, CRin_port)
 
     if ports_ok:

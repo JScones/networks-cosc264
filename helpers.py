@@ -28,7 +28,7 @@ def check_ports(*ports):
 
 def pack_data(packet):
     packed = pack('!2I3i' + str(packet.data_len) + 's',
-                  packet.magicno, packet.checksum, packet.pac_type, packet.seqno, packet.data_len, packet.data)
+                  packet.magicno, packet.checksum, packet.pac_type, packet.seqno, packet.data_len, bytes(packet.data, 'utf8'))
     return packed
 
 
@@ -40,8 +40,7 @@ def get_header(packet):
 
 def get_data(packet, data_len):
     data = unpack(str(data_len) + 's', packet[20:20+data_len])
-
-    return data
+    return str(data[0])
 
 
 def get_packets(in_data):
@@ -57,6 +56,7 @@ def get_packets(in_data):
         seq_no = header[3]
         data_len = header[4]
         data = get_data(in_data, data_len)
+        print(data)
 
         # temp_packet = Packet
 
@@ -74,16 +74,10 @@ def get_packet(in_data):
     """GETS A SINGLE PACKET INSTEAD OF A LIST OF PACKETS"""
     valid_packet = True
 
-    header = get_header(in_data)
-    magic_no = header[0]
-    checksum = header[1]
-    pac_type = header[2]
-    seq_no = header[3]
-    data_len = header[4]
-    data = get_data(in_data, data_len)
+    packet = get_packets(in_data)[0]
 
-    if magic_no != 0x497E:
+    if packet.magicno != 0x497E:
         valid_packet = False
-    packet = Packet(pac_type, seq_no, data_len, data, checksum)
 
-    return packet, valid_packet, pac_type
+
+    return packet, valid_packet, packet.pac_type
