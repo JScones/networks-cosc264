@@ -79,7 +79,7 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
 
             # Preparing acknowledgement packets.
             elif rcvd.seqno != expected:
-                packet = Packet(1, rcvd.seqno, 0, "idk") # Still needs a data parameter. Page 6
+                packet = Packet(1, rcvd.seqno, 0, "") # Still needs a data parameter. Page 6
                 acknowledgement_packet = pack_data(packet)
                 Rout.send(acknowledgement_packet)
             elif rcvd.seqno == expected:

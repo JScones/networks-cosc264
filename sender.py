@@ -75,14 +75,15 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
 
 
     # Read/Write
-    bytes = file.read(512)
-    n = len(bytes)
+    byte_file = file.read(512)
+    n = len(byte_file)
+    print(n)
     while True:
         if n == 0:
             packet = Packet(0, next, 0, '')
             data_packet = pack_data(packet)
         else:
-            packet = Packet(0, next, n, bytes)
+            packet = Packet(0, next, n, byte_file)
             data_packet = pack_data(packet)
 
         # To be start of inner loop
