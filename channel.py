@@ -37,6 +37,12 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
     CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    #TODO remove later, stops the sockets from staying open
+    CSin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    CSout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    CRin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    CRout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     # Bind
     try: # Catching errors binding the ports
         print("Binding port CSin")
@@ -85,38 +91,53 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
     while True: # while CRin doesnt receive terminating packet
         readable, _, _ = select.select([CSin, CRin], [], [])
         for sock in readable:
-            data_in, address = sock.recvfrom(1024)
-            rcvd, valid_packet, _ = get_packet(data_in)
-            if not valid_packet:
-                print("Packet magic number != 0x497E, dropping packet.\n")
-            else:
-                # Random variant for packet loss and bit errors to be implemented
-                CRout.send(pack_data(rcvd))
-        exit = input("Type EC to exit channel")
-        if exit == "EC":
+            host, port = sock.getsockname()
+            if port == CSin_port:
+                data_in, address = sock.recvfrom(1024)
+                packets = get_packets(data_in)
+                rcvd, valid_packet, _ = get_packet(data_in)
+                if not valid_packet:
+                    print("Packet magic number != 0x497E, dropping packet.\n")
+                else:
+                    # Random variant for packet loss and bit errors to be implemented
+                    CRout.send(data_in)
+            elif port == CRin_port:
+                data_in, address = sock.recvfrom(1024)
+                packets = get_packets(data_in)
+                rcvd, valid_packet, _ = get_packet(data_in)
+                if not valid_packet:
+                    print("Packet magic number != 0x497E, dropping packet.\n")
+                else:
+                    # Random variant for packet loss and bit errors to be implemented
+                    CSout.send(data_in)
+
+
+        exit_channel = input("Type EC to exit channel")
+        if exit_channel == "EC":
             break
         temp = input("Press enter to exit")
 
-    """ SCONZ CODE FROM LAST USE
-    while True:
+        """ Toohey old code
 
-        readable, _, _ = select.select([CRin, CSin],[],[])
-
-        if len(readable) != 0:
+        # Receive, select and send
+        while True:  # while CRin doesnt receive terminating packet
+            readable, _, _ = select.select([CSin, CRin], [], [])
             for sock in readable:
-                #print(sock)
-                in_packet, address = sock.recvfrom(1024)
-                if len(in_packet) != 0:
-                    header, data = unpack_data(in_packet)
-                    print("header = "+ str(header))
-                    #print(data.decode())
-        readable = []
+                data_in, address = sock.recvfrom(1024)
+                packets = get_packets(data_in)
+                print(packets)
+                rcvd, valid_packet, _ = get_packet(data_in)
+                if not valid_packet:
+                    print("Packet magic number != 0x497E, dropping packet.\n")
+                else:
+                    # Random variant for packet loss and bit errors to be implemented
+                    CRout.send(data_in)
+            exit_channel = input("Type EC to exit channel")
+            if exit_channel == "EC":
+                break
+            temp = input("Press enter to exit")
+        """
 
-        temp = input("Pausing loop, press enter to step")
-        if temp == "b":
-            break;
-    temp = input("Press enter to exit")
-    """
     CSin.close()
     CSout.close()
     CRin.close()

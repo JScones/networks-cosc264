@@ -28,11 +28,11 @@ def check_ports(*ports):
 
 def pack_data(packet):
     if type(packet.data) != bytes:
-        print("already bytes, printing")
-        print(packet.data)
+        print("packed non-binary data")
         packed = pack('!2I3i' + str(packet.data_len) + 's',
                       packet.magicno, packet.checksum, packet.pac_type, packet.seqno, packet.data_len, bytes(packet.data, 'utf8'))
     else:
+        print("packed binary data")
         packed = pack('!2I3i' + str(packet.data_len) + 's',
                       packet.magicno, packet.checksum, packet.pac_type, packet.seqno, packet.data_len, packet.data)
 
@@ -47,8 +47,7 @@ def get_header(packet):
 
 def get_data(packet, data_len):
     data = unpack(str(data_len) + 's', packet[20:20+data_len])
-    data_decode = data[0].decode("utf-8")
-    return data_decode
+    return data[0]
 
 
 def get_packets(in_data):

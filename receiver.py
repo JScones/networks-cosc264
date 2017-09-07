@@ -32,13 +32,17 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
         print("There is a problem with the supplied port numbers!\n Exiting")
         sys.exit()
 
-    file = open(filename, "w")  # Should this be a or w?
+    file = open(filename, "wb")  # Should this be a or w?
     expected = 0
 
     # Socket init
     Rin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     Rout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    Rin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    Rout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    CRin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 
     # Bind

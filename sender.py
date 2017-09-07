@@ -33,7 +33,7 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
         print("There is a problem with the supplied port numbers!\n Exiting")
         sys.exit()
 
-    file = open(filename, "r")  # Check it exists. If not, exit.
+    file = open(filename, "rb")  # Check it exists. If not, exit.
     next = 0
     exit_flag = False
 
@@ -41,6 +41,10 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
     Sin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     Sout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CSin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    Sin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    Sout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    CSin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # Bind
     try:
@@ -75,16 +79,25 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
 
 
     # Read/Write
-    byte_file = file.read(512)
+    byte_file = file.read()
     n = len(byte_file)
-    print(n)
+    sent = 0
     while True:
         if n == 0:
             packet = Packet(0, next, 0, '')
             data_packet = pack_data(packet)
         else:
-            packet = Packet(0, next, n, byte_file)
-            data_packet = pack_data(packet)
+            if n - sent > 512:
+                data = byte_file[sent:sent+512]
+                packet = Packet(0, next, 512, data)
+                data_packet = pack_data(packet)
+                sent += 512
+            else:
+                data = byte_file[sent:]
+                packet = Packet(0, next, len(data), data)
+                data_packet = pack_data(packet)
+                print("Last packet sent")
+                exit_flag = True
 
         # To be start of inner loop
         Sout.send(data_packet)
@@ -93,7 +106,7 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
         if len(readable) == 1:
             data_in, address = readable[0].recvfrom(1024)
             rcvd, valid_packet, pac_type = get_packet(data_in)
-            if valid_packet and rcvd.type == 1 and rcvd.data_len == 0 and rcvd.seqno == next:
+            if valid_packet and rcvd.pac_type == 1 and rcvd.data_len == 0 and rcvd.seqno == next:
                 next = 1 - next
                 print("Recieved acknowledgement packet.")
                 if exit_flag == True:  # Go to beginning of outer loop

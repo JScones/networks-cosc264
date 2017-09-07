@@ -1,4 +1,5 @@
 #!/bin/sh
-gnome-terminal -e "python3 channel.py" --window-with-profile=holder &
+
 gnome-terminal -e "python3 receiver.py" --window-with-profile=holder &
+gnome-terminal -e "python3 channel.py" --window-with-profile=holder &
 gnome-terminal -e "python3 sender.py" --window-with-profile=holder
