@@ -18,6 +18,9 @@
 import socket
 import sys
 import select
+
+import time
+
 from helpers import *
 from packet import Packet
 
@@ -62,13 +65,23 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
     Rin, _ = Rin.accept()
 
     # Connect Rout to CRin
-    try:
-        print("Connecting Rout to CRin")
-        Rout.connect(('localhost', CRin_port))
-        print("Connection successful\n")
-    except socket.error as msg:
-        print("Connect failed. Exiting\n Error: " + str(msg))
-        sys.exit()
+    connected = False
+    connect_attempts = 0
+    while not connected:
+        try:
+            print("Connecting Rout to CRin")
+            Rout.connect(('localhost', CRin_port))
+            print("Connection successful\n")
+            connected = True
+        except socket.error as msg:
+            connect_attempts += 1
+            if msg.errno == 111 and connect_attempts < 6:
+                print("Connection refused {} time(s), sleeping and retrying".format(connect_attempts))
+                time.sleep(5)
+                pass
+            else:
+                print("Connect failed. Exiting\n Error: " + str(msg))
+                sys.exit()
 
     # Read/Write
     while True: # while the empty packet has not been found

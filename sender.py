@@ -59,13 +59,23 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
         sys.exit()
 
     # Connect Sout
-    try:
-        print("Connecting Sout to CSin")
-        Sout.connect(('localhost', CSin_port))
-        print("Connection successful\n")
-    except socket.error as msg:
-        print("Connect failed. Exiting\n Error: " + str(msg))
-        sys.exit()
+    connected = False
+    connect_attempts = 0
+    while not connected:
+        try:
+            print("Connecting Sout to CSin")
+            Sout.connect(('localhost', CSin_port))
+            print("Connection successful\n")
+            connected = True
+        except socket.error as msg:
+            connect_attempts += 1
+            if msg.errno == 111 and connect_attempts < 6:
+                print("Connection refused {} time(s), sleeping and retrying".format(connect_attempts))
+                time.sleep(5)
+                pass
+            else:
+                print("Connect failed. Exiting\n Error: " + str(msg))
+                sys.exit()
 
     # Listen and Accept Sin
     Sin.listen(50)

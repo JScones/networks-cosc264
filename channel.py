@@ -16,6 +16,9 @@
 import socket
 import sys
 import select
+
+import time
+
 from packet import Packet
 from helpers import *
 
@@ -66,13 +69,23 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
     print("CSin accepted")
 
     # Connect CRout to Rin
-    try:
-        print("Connecting CRout to Rin")
-        CRout.connect(('localhost', Rin_port))
-        print("Connection successful\n")
-    except socket.error as msg:
-        print("Connect failed. Exiting\n Error: " + str(msg))
-        sys.exit()
+    connected = False
+    connect_attempts = 0
+    while not connected:
+        try:
+            print("Connecting CRout to Rin")
+            CRout.connect(('localhost', Rin_port))
+            print("Connection successful\n")
+            connected = True
+        except socket.error as msg:
+            connect_attempts += 1
+            if msg.errno == 111 and connect_attempts < 6:
+                print("Connection refused {} time(s), sleeping and retrying".format(connect_attempts))
+                time.sleep(5)
+                pass
+            else:
+                print("Connect failed. Exiting\n Error: " + str(msg))
+                sys.exit()
 
     # Listen and accept CRin
     CRin.listen(50)
