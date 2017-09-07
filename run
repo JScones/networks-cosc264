@@ -1,5 +1,10 @@
 #!/bin/sh
 
+rm out.txt &
 gnome-terminal -e "python3 receiver.py" --window-with-profile=holder &
 gnome-terminal -e "python3 channel.py" --window-with-profile=holder &
 gnome-terminal -e "python3 sender.py" --window-with-profile=holder
+wait
+echo Check for differences, waiting
+sleep 10
+diff -s in.txt out.txt

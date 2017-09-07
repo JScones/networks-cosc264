@@ -42,6 +42,7 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
     Sout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CSin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    # TODO remove later, stops the already in use error
     Sin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     Sout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     CSin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -58,7 +59,7 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
         print("Bind failed. Exiting.\n Error: " + str(msg))
         sys.exit()
 
-    # Connect Sout
+    # Try to connect Sout 5 times before giving up (waiting 5 seconds between attempts)
     connected = False
     connect_attempts = 0
     while not connected:
@@ -81,21 +82,19 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
     Sin.listen(50)
     Sin, _ = Sin.accept()
 
-    # Test write...
-    #packet1 = Packet(1, 0, 25, "Testing sender to reciever", 0)
-    #packed_data = pack_data(packet1)
-    #Sout.send(packed_data)
-    #print("Packet sent")
-
-
-    # Read/Write
+    # Read file
     byte_file = file.read()
     n = len(byte_file)
+    size = n
     sent = 0
-    while True:
+    count = 0
+
+    # Send
+    while not exit_flag:
         if n == 0:
             packet = Packet(0, next, 0, '')
             data_packet = pack_data(packet)
+            exit_flag = True
         else:
             if n - sent > 512:
                 data = byte_file[sent:sent+512]
@@ -106,27 +105,35 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
                 data = byte_file[sent:]
                 packet = Packet(0, next, len(data), data)
                 data_packet = pack_data(packet)
-                print("Last packet sent")
+                print("Last data packet sent")
                 exit_flag = True
 
-        # To be start of inner loop
-        Sout.send(data_packet)
-        readable, _, _ = select.select([Sin], [], [])  # Timeout after 1 second. If timeout, retransmit.
+        successfully_sent = False
+        while not successfully_sent:
+            count += 1
+            Sout.send(data_packet)
+            readable, _, _ = select.select([Sin], [], [], 1)  # Timeout after 1 second. If timeout, retransmit.
 
-        if len(readable) == 1:
-            data_in, address = readable[0].recvfrom(1024)
-            rcvd, valid_packet, pac_type = get_packet(data_in)
-            if valid_packet and rcvd.pac_type == 1 and rcvd.data_len == 0 and rcvd.seqno == next:
-                next = 1 - next
-                print("Recieved acknowledgement packet.")
-                if exit_flag == True:  # Go to beginning of outer loop
-                    file.close()
-                    break
-                # else: back to beginning of loop without closing.
-                # A counter for how many packets are sent is also to be added.
+            if len(readable) == 1:
+                data_in, address = readable[0].recvfrom(1024)
+                rcvd, valid_packet = get_packet(data_in)
+                if valid_packet and rcvd.pac_type == 1 and rcvd.data_len == 0 and rcvd.seqno == next:
+                    next = 1 - next
+                    print("Received acknowledgement packet.")
+                    successfully_sent = True
+                    if exit_flag:  # Go to beginning of outer loop
+                        file.close()
+                        break
+            else:  # retransmit
+                print("timed out")
+                print("Resending packet")
 
-    # time.sleep(5)
-
+    last_packet = Packet(0, next, 0, "")
+    data_packet = pack_data(last_packet)
+    Sout.send(data_packet)
+    print("Sent {} bytes".format(size))
+    print("Number needed for perfect transmission: {}".format(size//512))
+    print("Actually took: {}".format(count))
 
     Sin.close()
     Sout.close()

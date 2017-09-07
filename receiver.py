@@ -18,7 +18,7 @@
 import socket
 import sys
 import select
-
+import os.path
 import time
 
 from helpers import *
@@ -35,18 +35,21 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
         print("There is a problem with the supplied port numbers!\n Exiting")
         sys.exit()
 
-    file = open(filename, "wb")  # Should this be a or w?
-    expected = 0
+    if not os.path.isfile(filename):
+        file = open(filename, "wb+")  # Should this be a or w?
+    else:
+        print("File already exists, aborting")
+        sys.exit()
 
     # Socket init
     Rin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     Rout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    # TODO remove later, stops the already in use error
     Rin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     Rout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     CRin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
 
     # Bind
     try:
@@ -83,37 +86,46 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
                 print("Connect failed. Exiting\n Error: " + str(msg))
                 sys.exit()
 
+    expected = 0
+    finished = False
     # Read/Write
-    while True: # while the empty packet has not been found
+    while not finished:  # while the empty packet has not been found
         readable, _, _ = select.select([Rin], [], [])
         if len(readable) == 1:
             data_in, address = readable[0].recvfrom(1024)
-            rcvd, valid_packet, pac_type = get_packet(data_in)
+            print(len(data_in))
+            if len(data_in) == 0:
+                print("Finished, I think...")
+                finished = True
+                continue
+            rcvd, valid_packet = get_packet(data_in)
             if not valid_packet:
-                print("Different magic number stop processing\n")
-            elif pac_type == 1:
+                print("Invalid packet, stop processing\n")
+                continue
+            elif rcvd.pac_type == 1:
                 print("Packet type not dataPacket, stop processing\n")
+                continue
 
             # Preparing acknowledgement packets.
             elif rcvd.seqno != expected:
-                packet = Packet(1, rcvd.seqno, 0, "") # Still needs a data parameter. Page 6
+                packet = Packet(1, rcvd.seqno, 0, "")  # Still needs a data parameter. Page 6
                 acknowledgement_packet = pack_data(packet)
                 Rout.send(acknowledgement_packet)
             elif rcvd.seqno == expected:
                 packet = Packet(1, rcvd.seqno, 0, "")
                 acknowledgement_packet = pack_data(packet)
                 Rout.send(acknowledgement_packet)
+
             if rcvd.data_len > 0:
-                print(rcvd.data)
+                print("Received valid data packet, writing...")
                 file.write(rcvd.data)
             else:
-                Rin.close()
-                Rout.close()
-                CRin.close()
-                break
+                print("Finished")
+                finished = True
 
-
-
+    Rin.close()
+    Rout.close()
+    CRin.close()
 
     """
     packet1 = Packet(0, 0, 27, b"Testing receiver to channel", 0)

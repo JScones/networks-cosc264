@@ -13,18 +13,18 @@
              James Toohey    27073776
 """
 
+import random
+import select
 import socket
 import sys
-import select
-
 import time
 
-from packet import Packet
 from helpers import *
 
 
 def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Precision):
     print("CHANNEL\n")
+    random.seed(5)
 
     ports_ok = check_ports(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port)
 
@@ -40,14 +40,14 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
     CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    #TODO remove later, stops the sockets from staying open
+    # TODO remove later, stops the already in use error
     CSin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     CSout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     CRin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     CRout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # Bind
-    try: # Catching errors binding the ports
+    try:  # Catching errors binding the ports
         print("Binding port CSin")
         CSin.bind(('localhost', CSin_port))
         print("CSin successfully bound\n")
@@ -101,34 +101,64 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
         sys.exit()
 
     # Receive, select and send
-    while True: # while CRin doesnt receive terminating packet
+    finished = False
+    while not finished:  # while CRin doesnt receive terminating packet
         readable, _, _ = select.select([CSin, CRin], [], [])
         for sock in readable:
             host, port = sock.getsockname()
             if port == CSin_port:
                 data_in, address = sock.recvfrom(1024)
-                packets = get_packets(data_in)
-                rcvd, valid_packet, _ = get_packet(data_in)
-                if not valid_packet:
-                    print("Packet magic number != 0x497E, dropping packet.\n")
+
+                if len(data_in) != 0:
+                    header = get_header_object(data_in)
+
+                    if header.magicno != 0x497E:
+                        print("Sender Packet magic number != 0x497E, dropping packet.\n")
+                        continue
+                    else:
+                        # Random variant for packet loss and bit errors to be implemented
+                        u = random.uniform(0, 1)
+                        if u < Precision:  # bit errors
+                            print("bit error")
+                            packet, valid = get_packet(data_in)
+                            if valid:
+                                new_packet = Packet(packet.pac_type,
+                                                    packet.seqno,
+                                                    packet.data_len + random.randrange(0, 11),
+                                                    packet.data,
+                                                    packet.checksum)
+                                data_in = pack_data(new_packet)
+                        else:
+                            v = random.uniform(0, 1)
+                            if v < 0.1:
+                                print("drop packet")
+                                continue
+                        CRout.send(data_in)
                 else:
-                    # Random variant for packet loss and bit errors to be implemented
-                    CRout.send(data_in)
+                    print("empty data packet received, finished")
+                    finished = True
+                    break
+
             elif port == CRin_port:
                 data_in, address = sock.recvfrom(1024)
-                packets = get_packets(data_in)
-                rcvd, valid_packet, _ = get_packet(data_in)
-                if not valid_packet:
-                    print("Packet magic number != 0x497E, dropping packet.\n")
+
+                if len(data_in) != 0:
+                    header = get_header_object(data_in)
+                    if header.magicno != 0x497E:
+                        print("Receiver Packet magic number != 0x497E, dropping packet.\n")
+                    else:
+                        # Random variant for packet loss and bit errors to be implemented
+                        CSout.send(data_in)
                 else:
-                    # Random variant for packet loss and bit errors to be implemented
-                    CSout.send(data_in)
+                    # TODO does this ever get called?
+                    print("nothing received from receiver, done")
+                    finished = True
+                    break
 
-
-        exit_channel = input("Type EC to exit channel")
-        if exit_channel == "EC":
-            break
-        temp = input("Press enter to exit")
+        # exit_channel = input("Type EC to exit channel")
+        # if exit_channel == "EC":
+        #     break
+        # temp = input("Press enter to exit")
 
         """ Toohey old code
 
@@ -159,7 +189,7 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
 
 
 if __name__ == '__main__':
-    channel(7001,7002,7003,7004,7005,7007,1)
+    channel(7001, 7002, 7003, 7004, 7005, 7007, 0.1)
     # uncomment below to get command line args working again
     """
     if len(sys.argv) != 8:

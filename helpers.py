@@ -6,6 +6,7 @@
 
 from struct import *
 from packet import Packet
+from packet import Header
 
 
 def check_ports(*ports):
@@ -16,10 +17,10 @@ def check_ports(*ports):
     all_clear = True
     set_ports = set(ports)
 
-    if len(ports) != len(set_ports): # Check for duplicate ports
+    if len(ports) != len(set_ports):  # Check for duplicate ports
         all_clear = False
 
-    for port in ports: # check each port is within acceptable port range
+    for port in ports:  # check each port is within acceptable port range
         if port < 1024 or port > 64000 or not (isinstance(port, int)):
             all_clear = False
 
@@ -28,11 +29,10 @@ def check_ports(*ports):
 
 def pack_data(packet):
     if type(packet.data) != bytes:
-        print("packed non-binary data")
         packed = pack('!2I3i' + str(packet.data_len) + 's',
-                      packet.magicno, packet.checksum, packet.pac_type, packet.seqno, packet.data_len, bytes(packet.data, 'utf8'))
+                      packet.magicno, packet.checksum, packet.pac_type, packet.seqno, packet.data_len,
+                      bytes(packet.data, 'utf8'))
     else:
-        print("packed binary data")
         packed = pack('!2I3i' + str(packet.data_len) + 's',
                       packet.magicno, packet.checksum, packet.pac_type, packet.seqno, packet.data_len, packet.data)
 
@@ -45,44 +45,50 @@ def get_header(packet):
     return header
 
 
+def get_header_object(packet):
+    header_object = Header(get_header(packet))
+
+    return header_object
+
+
 def get_data(packet, data_len):
-    data = unpack(str(data_len) + 's', packet[20:20+data_len])
+    data = unpack(str(data_len) + 's', packet[20:20 + data_len])
     return data[0]
 
 
 def get_packets(in_data):
-
     packets = []
 
     while in_data != b'':
         header = get_header(in_data)
-        # print(header)
-        magic_no = header[0]
         checksum = header[1]
         pac_type = header[2]
         seq_no = header[3]
         data_len = header[4]
-        data = get_data(in_data, data_len)
-        # print(data)
 
-        # temp_packet = Packet
+        if data_len >= len(in_data) - 20:
+            data = get_data(in_data, data_len)
 
-        if magic_no != 0x497E:
-            print("MAGIC NUMBER != 0x497E, dropping packet.")
-        else:
             temp_packet = Packet(pac_type, seq_no, data_len, data, checksum)
             packets.append(temp_packet)
 
-            in_data = in_data[20+data_len:]
+            in_data = in_data[20 + data_len:]
+        else:
+            print("Incomplete packet")
+            in_data = b''
 
     return packets
 
+
 def get_packet(in_data):
     """GETS A SINGLE PACKET INSTEAD OF A LIST OF PACKETS"""
-    valid_packet = True
-    packet = get_packets(in_data)[0]
+    valid_packet = False
+    packet = None
+    try:
+        packet = get_packets(in_data)[0]
+        valid_packet = packet.checksum == packet.calculate_checksum()
 
-    if packet.magicno != 0x497E:
-        valid_packet = False
+    except IndexError:
+        pass
 
-    return packet, valid_packet, packet.pac_type
+    return packet, valid_packet
