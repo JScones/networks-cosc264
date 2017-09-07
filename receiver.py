@@ -32,14 +32,16 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
         print("There is a problem with the supplied port numbers!\n Exiting")
         sys.exit()
 
+    file = open(filename, "w")  # Should this be a or w?
+    expected = 0
+
+    # Socket init
     Rin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     Rout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    file = open(filename, "a")
-    expected = 0
 
-    # Binding
+    # Bind
     try:
         print("Binding port Rin")
         Rin.bind(('localhost', Rin_port))
@@ -50,19 +52,21 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
     except socket.error as msg:
         print("Bind failed. Exiting.\n Error: " + str(msg))
         sys.exit()
-        
+
+    # Listen and accept Rin
     Rin.listen(50)
     Rin, _ = Rin.accept()
 
-    # Connecting
-    '''try:
+    # Connect Rout to CRin
+    try:
         print("Connecting Rout to CRin")
         Rout.connect(('localhost', CRin_port))
         print("Connection successful\n")
     except socket.error as msg:
         print("Connect failed. Exiting\n Error: " + str(msg))
-        sys.exit()'''
+        sys.exit()
 
+    # Read/Write
     while True: # while the empty packet has not been found
         readable, _, _ = select.select([Rin], [], [])
         if len(readable) == 1:
@@ -70,16 +74,18 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
             rcvd, valid_packet, pac_type = get_packet(data_in)
             if not valid_packet:
                 print("Different magic number stop processing\n")
-            elif pac_type != 1:
+            elif pac_type == 1:
                 print("Packet type not dataPacket, stop processing\n")
 
             # Preparing acknowledgement packets.
             elif rcvd.seqno != expected:
-                acknowledgement_packet = Packet(1, rcvd.seqno, 0, "idk") # Still needs a data parameter. Page 6
-                # send acknowledgement_packet.
+                packet = Packet(1, rcvd.seqno, 0, "idk") # Still needs a data parameter. Page 6
+                acknowledgement_packet = pack_data(packet)
+                Rout.send(acknowledgement_packet)
             elif rcvd.seqno == expected:
-                acknowledgement_packet = Packet(1, rcvd.seqno, 0, "")
-                # send acknowledgement_packet.
+                packet = Packet(1, rcvd.seqno, 0, "")
+                acknowledgement_packet = pack_data(packet)
+                Rout.send(acknowledgement_packet)
             if rcvd.data_len > 0:
                 print(rcvd.data)
                 file.write(rcvd.data)

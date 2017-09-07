@@ -16,6 +16,7 @@
 """
 
 import socket
+import select
 import sys
 from helpers import *
 from packet import Packet
@@ -32,10 +33,16 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
         print("There is a problem with the supplied port numbers!\n Exiting")
         sys.exit()
 
+    file = open(filename, "r")  # Check it exists. If not, exit.
+    next = 0
+    exit_flag = False
+
+    # Socket init
     Sin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     Sout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CSin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    # Bind
     try:
         print("Binding port Rin")
         Sin.bind(('localhost', Sin_port))
@@ -47,6 +54,7 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
         print("Bind failed. Exiting.\n Error: " + str(msg))
         sys.exit()
 
+    # Connect Sout
     try:
         print("Connecting Sout to CSin")
         Sout.connect(('localhost', CSin_port))
@@ -54,23 +62,52 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
     except socket.error as msg:
         print("Connect failed. Exiting\n Error: " + str(msg))
         sys.exit()
-        
 
-    packet1 = Packet(1, 0, 25, "Testing sender to reciever", 0)
-    packed_data = pack_data(packet1)
-    Sout.send(packed_data)
-    print("Packet sent")
+    # Listen and Accept Sin
+    Sin.listen(50)
+    Sin, _ = Sin.accept()
 
-    time.sleep(5)
+    # Test write...
+    #packet1 = Packet(1, 0, 25, "Testing sender to reciever", 0)
+    #packed_data = pack_data(packet1)
+    #Sout.send(packed_data)
+    #print("Packet sent")
 
-    # packet1 = Packet(0, 0, 13, b"Second packet", 0)
-    # packed_data = pack_data(packet1)
-    # Sout.send(packed_data)
+
+    # Read/Write
+    bytes = file.read(512)
+    n = len(bytes)
+    while True:
+        if n == 0:
+            packet = Packet(0, next, 0, '')
+            data_packet = pack_data(packet)
+        else:
+            packet = Packet(0, next, n, bytes)
+            data_packet = pack_data(packet)
+
+        # To be start of inner loop
+        Sout.send(data_packet)
+        readable, _, _ = select.select([Sin], [], [])  # Timeout after 1 second. If timeout, retransmit.
+
+        if len(readable) == 1:
+            data_in, address = readable[0].recvfrom(1024)
+            rcvd, valid_packet, pac_type = get_packet(data_in)
+            if valid_packet and rcvd.type == 1 and rcvd.data_len == 0 and rcvd.seqno == next:
+                next = 1 - next
+                print("Recieved acknowledgement packet.")
+                if exit_flag == True:  # Go to beginning of outer loop
+                    file.close()
+                    break
+                # else: back to beginning of loop without closing.
+                # A counter for how many packets are sent is also to be added.
+
+    # time.sleep(5)
+
 
     Sin.close()
     Sout.close()
     CSin.close()
 
 if __name__ == '__main__':
-    sender(7005, 7006, 7001, "Filename here")
+    sender(7005, 7006, 7001, "in.txt")
     print(sys.argv)
