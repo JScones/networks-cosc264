@@ -101,6 +101,16 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
         sys.exit()
 
     # Receive, select and send
+    receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision)
+
+    CSin.close()
+    CSout.close()
+    CRin.close()
+    CRout.close()
+    return None
+
+def receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
+    """Big fuckoff function, will be refactored"""
     finished = False
     while not finished:  # while CRin doesnt receive terminating packet
         readable, _, _ = select.select([CSin, CRin], [], [])
@@ -116,7 +126,6 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
                         print("Sender Packet magic number != 0x497E, dropping packet.\n")
                         continue
                     else:
-                        # Random variant for packet loss and bit errors to be implemented
                         u = random.uniform(0, 1)
                         if u < Precision:  # bit errors
                             print("bit error")
@@ -154,38 +163,6 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
                     print("nothing received from receiver, done")
                     finished = True
                     break
-
-        # exit_channel = input("Type EC to exit channel")
-        # if exit_channel == "EC":
-        #     break
-        # temp = input("Press enter to exit")
-
-        """ Toohey old code
-
-        # Receive, select and send
-        while True:  # while CRin doesnt receive terminating packet
-            readable, _, _ = select.select([CSin, CRin], [], [])
-            for sock in readable:
-                data_in, address = sock.recvfrom(1024)
-                packets = get_packets(data_in)
-                print(packets)
-                rcvd, valid_packet, _ = get_packet(data_in)
-                if not valid_packet:
-                    print("Packet magic number != 0x497E, dropping packet.\n")
-                else:
-                    # Random variant for packet loss and bit errors to be implemented
-                    CRout.send(data_in)
-            exit_channel = input("Type EC to exit channel")
-            if exit_channel == "EC":
-                break
-            temp = input("Press enter to exit")
-        """
-
-    CSin.close()
-    CSout.close()
-    CRin.close()
-    CRout.close()
-    return None
 
 
 if __name__ == '__main__':

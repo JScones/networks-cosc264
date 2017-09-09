@@ -35,11 +35,11 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
         print("There is a problem with the supplied port numbers!\n Exiting")
         sys.exit()
 
-    if not os.path.isfile(filename):
-        file = open(filename, "wb+")  # Should this be a or w?
-    else:
-        print("File already exists, aborting")
-        sys.exit()
+    #if not os.path.isfile(filename):
+    file = open(filename, "wb+")
+    #else:
+        #print("File already exists, aborting")
+        #sys.exit()
 
     # Socket init
     Rin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -85,10 +85,19 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
             else:
                 print("Connect failed. Exiting\n Error: " + str(msg))
                 sys.exit()
+    # Read/Write
+    read_and_write(Rin, Rout, file)
 
+    Rin.close()
+    Rout.close()
+    CRin.close()
+
+    return None
+
+
+def read_and_write(Rin, Rout, file):
     expected = 0
     finished = False
-    # Read/Write
     while not finished:  # while the empty packet has not been found
         readable, _, _ = select.select([Rin], [], [])
         if len(readable) == 1:
@@ -106,15 +115,7 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
                 print("Packet type not dataPacket, stop processing\n")
                 continue
 
-            # Preparing acknowledgement packets.
-            elif rcvd.seqno != expected:
-                packet = Packet(1, rcvd.seqno, 0, "")  # Still needs a data parameter. Page 6
-                acknowledgement_packet = pack_data(packet)
-                Rout.send(acknowledgement_packet)
-            elif rcvd.seqno == expected:
-                packet = Packet(1, rcvd.seqno, 0, "")
-                acknowledgement_packet = pack_data(packet)
-                Rout.send(acknowledgement_packet)
+            acknowledge(Rout, rcvd.seqno, expected)
 
             if rcvd.data_len > 0:
                 print("Received valid data packet, writing...")
@@ -123,16 +124,20 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
                 print("Finished")
                 finished = True
 
-    Rin.close()
-    Rout.close()
-    CRin.close()
 
-    """
-    packet1 = Packet(0, 0, 27, b"Testing receiver to channel", 0)
-    packed_data = pack_data(packet1)
-    Rout.send(packed_data)"""
 
-    return None
+def acknowledge(Rout, seqno, expected):
+    """Creates appropriate acknowledgement packets and sends them through Rout."""
+    if seqno != expected:
+        packet = Packet(1, seqno, 0, "")  # Still needs a data parameter. Page 6
+        acknowledgement_packet = pack_data(packet)
+        Rout.send(acknowledgement_packet)
+
+    elif seqno == expected:
+        packet = Packet(1, seqno, 0, "")
+        acknowledgement_packet = pack_data(packet)
+        Rout.send(acknowledgement_packet)
+
 
 
 if __name__ == '__main__':

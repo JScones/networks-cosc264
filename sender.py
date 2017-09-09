@@ -34,8 +34,6 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
         sys.exit()
 
     file = open(filename, "rb")  # Check it exists. If not, exit.
-    next = 0
-    exit_flag = False
 
     # Socket init
     Sin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -83,50 +81,7 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
     Sin, _ = Sin.accept()
 
     # Read file
-    byte_file = file.read()
-    n = len(byte_file)
-    size = n
-    sent = 0
-    count = 0
-
-    # Send
-    while not exit_flag:
-        if n == 0:
-            packet = Packet(0, next, 0, '')
-            data_packet = pack_data(packet)
-            exit_flag = True
-        else:
-            if n - sent > 512:
-                data = byte_file[sent:sent+512]
-                packet = Packet(0, next, 512, data)
-                data_packet = pack_data(packet)
-                sent += 512
-            else:
-                data = byte_file[sent:]
-                packet = Packet(0, next, len(data), data)
-                data_packet = pack_data(packet)
-                print("Last data packet sent")
-                exit_flag = True
-
-        successfully_sent = False
-        while not successfully_sent:
-            count += 1
-            Sout.send(data_packet)
-            readable, _, _ = select.select([Sin], [], [], 1)  # Timeout after 1 second. If timeout, retransmit.
-
-            if len(readable) == 1:
-                data_in, address = readable[0].recvfrom(1024)
-                rcvd, valid_packet = get_packet(data_in)
-                if valid_packet and rcvd.pac_type == 1 and rcvd.data_len == 0 and rcvd.seqno == next:
-                    next = 1 - next
-                    print("Received acknowledgement packet.")
-                    successfully_sent = True
-                    if exit_flag:  # Go to beginning of outer loop
-                        file.close()
-                        break
-            else:  # retransmit
-                print("timed out")
-                print("Resending packet")
+    next, size, count = read_file(Sin, Sout, file)
 
     last_packet = Packet(0, next, 0, "")
     data_packet = pack_data(last_packet)
@@ -138,6 +93,68 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
     Sin.close()
     Sout.close()
     CSin.close()
+
+def read_file(Sin, Sout, file):
+    """
+    An outer loop which reads the file and sends packets of its content. Also receives
+    acknowledgement packets to ensure successful delivery of packets.
+    """
+    byte_file = file.read()
+    n = len(byte_file)
+    size = n
+    sent = 0
+    count = 0
+    next = 0
+    exit_flag = False
+
+    # Send
+    while not exit_flag:
+        if n == 0:
+            packet = Packet(0, next, 0, '')
+            data_packet = pack_data(packet)
+            exit_flag = True
+        else:
+            if n - sent > 512:
+                data = byte_file[sent:sent + 512]
+                packet = Packet(0, next, 512, data)
+                data_packet = pack_data(packet)
+                sent += 512
+            else:
+                data = byte_file[sent:]
+                packet = Packet(0, next, len(data), data)
+                data_packet = pack_data(packet)
+                print("Last data packet sent")
+                exit_flag = True
+
+        count, next, exit_flag = check(Sin, Sout, count, data_packet, next, file, exit_flag)
+
+    return next, size, count
+
+
+def check(Sin, Sout, count, data_packet, next, file, exit_flag):
+    """An inner loop which checks that the packet has been successfully sent."""
+    successfully_sent = False
+    while not successfully_sent:
+        count += 1
+        Sout.send(data_packet)
+        readable, _, _ = select.select([Sin], [], [], 1)  # Timeout after 1 second. If timeout, retransmit.
+
+        if len(readable) == 1:
+            data_in, address = readable[0].recvfrom(1024)
+            rcvd, valid_packet = get_packet(data_in)
+            if valid_packet and rcvd.pac_type == 1 and rcvd.data_len == 0 and rcvd.seqno == next:
+                next = 1 - next
+                print("Received acknowledgement packet.")
+                successfully_sent = True
+                if exit_flag:  # Go to beginning of outer loop
+                    file.close()
+                    break
+        else:  # retransmit
+            print("timed out")
+            print("Resending packet")
+    return count, next, exit_flag
+
+
 
 if __name__ == '__main__':
     sender(7005, 7006, 7001, "in.txt")
