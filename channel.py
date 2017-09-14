@@ -127,21 +127,21 @@ def receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
                         continue
                     else:
                         u = random.uniform(0, 1)
-                        if u < Precision:  # bit errors
-                            print("bit error")
-                            packet, valid = get_packet(data_in)
-                            if valid:
-                                new_packet = Packet(packet.pac_type,
-                                                    packet.seqno,
-                                                    packet.data_len + random.randrange(0, 11),
-                                                    packet.data,
-                                                    packet.checksum)
-                                data_in = pack_data(new_packet)
+                        if u < Precision:  # drop packet
+                            print("drop packet")
+                            continue
                         else:
                             v = random.uniform(0, 1)
                             if v < 0.1:
-                                print("drop packet")
-                                continue
+                                print("bit error")
+                                packet, valid = get_packet(data_in)
+                                if valid:
+                                    new_packet = Packet(packet.pac_type,
+                                                        packet.seqno,
+                                                        packet.data_len + random.randrange(0, 11),
+                                                        packet.data,
+                                                        packet.checksum)
+                                    data_in = pack_data(new_packet)
                         CRout.send(data_in)
                 else:
                     print("empty data packet received, finished")
@@ -166,7 +166,7 @@ def receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
 
 
 if __name__ == '__main__':
-    channel(7001, 7002, 7003, 7004, 7005, 7007, 0.1)
+    channel(7001, 7002, 7003, 7004, 7005, 7007, 0.0)
     # uncomment below to get command line args working again
     """
     if len(sys.argv) != 8:

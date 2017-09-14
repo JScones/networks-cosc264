@@ -35,11 +35,11 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
         print("There is a problem with the supplied port numbers!\n Exiting")
         sys.exit()
 
-    #if not os.path.isfile(filename):
-    file = open(filename, "wb+")
-    #else:
-        #print("File already exists, aborting")
-        #sys.exit()
+    if not os.path.isfile(filename):
+        file = open(filename, "wb+")
+    else:
+        print("File already exists, aborting")
+        sys.exit()
 
     # Socket init
     Rin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -102,7 +102,7 @@ def read_and_write(Rin, Rout, file):
         readable, _, _ = select.select([Rin], [], [])
         if len(readable) == 1:
             data_in, address = readable[0].recvfrom(1024)
-            print(len(data_in))
+            # print(len(data_in))
             if len(data_in) == 0:
                 print("Finished, I think...")
                 finished = True

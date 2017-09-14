@@ -157,5 +157,5 @@ def check(Sin, Sout, count, data_packet, next, file, exit_flag):
 
 
 if __name__ == '__main__':
-    sender(7005, 7006, 7001, "in.txt")
+    sender(7005, 7006, 7001, "51200.txt")
     print(sys.argv)
