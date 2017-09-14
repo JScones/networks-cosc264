@@ -80,15 +80,23 @@ def get_packets(in_data):
     return packets
 
 
+
 def get_packet(in_data):
-    """GETS A SINGLE PACKET INSTEAD OF A LIST OF PACKETS"""
     valid_packet = False
     packet = None
-    try:
-        packet = get_packets(in_data)[0]
-        valid_packet = packet.checksum == packet.calculate_checksum()
 
-    except IndexError:
-        pass
+    if in_data != b'':
+        header = get_header(in_data)
+        checksum = header[1]
+        pac_type = header[2]
+        seq_no = header[3]
+        data_len = header[4]
+
+        if data_len >= len(in_data) - 20:
+            data = get_data(in_data, data_len)
+
+            packet = Packet(pac_type, seq_no, data_len, data, checksum)
+
+        valid_packet = packet.checksum == packet.calculate_checksum()
 
     return packet, valid_packet

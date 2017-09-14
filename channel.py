@@ -79,7 +79,7 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
             connected = True
         except socket.error as msg:
             connect_attempts += 1
-            if msg.errno == 111 and connect_attempts < 6:
+            if msg.errno in [111, 10061] and connect_attempts < 6:
                 print("Connection refused {} time(s), sleeping and retrying".format(connect_attempts))
                 time.sleep(5)
                 pass

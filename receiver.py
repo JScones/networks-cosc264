@@ -78,7 +78,7 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
             connected = True
         except socket.error as msg:
             connect_attempts += 1
-            if msg.errno == 111 and connect_attempts < 6:
+            if msg.errno in [111, 10061] and connect_attempts < 6:
                 print("Connection refused {} time(s), sleeping and retrying".format(connect_attempts))
                 time.sleep(5)
                 pass
@@ -103,10 +103,10 @@ def read_and_write(Rin, Rout, file):
         if len(readable) == 1:
             data_in, address = readable[0].recvfrom(1024)
             # print(len(data_in))
-            if len(data_in) == 0:
-                print("Finished, I think...")
-                finished = True
-                continue
+            # if len(data_in) == 0:
+            #     print("Finished, I think...")
+            #     finished = True
+            #     continue
             rcvd, valid_packet = get_packet(data_in)
             if not valid_packet:
                 print("Invalid packet, stop processing\n")

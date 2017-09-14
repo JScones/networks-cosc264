@@ -68,7 +68,7 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
             connected = True
         except socket.error as msg:
             connect_attempts += 1
-            if msg.errno == 111 and connect_attempts < 6:
+            if msg.errno in [111, 10061] and connect_attempts < 6:
                 print("Connection refused {} time(s), sleeping and retrying".format(connect_attempts))
                 time.sleep(5)
                 pass
