@@ -109,11 +109,26 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
     CRout.close()
     return None
 
+def bitError(data_in):
+    v = random.uniform(0, 1)
+    if v < 0.1:
+        print("bit error")
+        packet, valid = get_packet(data_in)
+        if valid:
+            new_packet = Packet(packet.pac_type,
+                                packet.seqno,
+                                packet.data_len + random.randrange(0, 11),
+                                packet.data,
+                                packet.checksum)
+            data_in = pack_data(new_packet)
+
+    return data_in
+
 def receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
     """Big fuckoff function, will be refactored"""
     finished = False
     while not finished:  # while CRin doesnt receive terminating packet
-        readable, _, _ = select.select([CSin, CRin], [], [])
+        readable, _, _ = select.select([CSin, CRin], [], []) # Blocking call for input
         for sock in readable:
             host, port = sock.getsockname()
             if port == CSin_port:
@@ -125,23 +140,14 @@ def receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
                     if header.magicno != 0x497E:
                         print("Sender Packet magic number != 0x497E, dropping packet.\n")
                         continue
-                    else:
+                    else: # potentially drop packet
                         u = random.uniform(0, 1)
                         if u < Precision:  # drop packet
                             print("drop packet")
                             continue
-                        else:
-                            v = random.uniform(0, 1)
-                            if v < 0.1:
-                                print("bit error")
-                                packet, valid = get_packet(data_in)
-                                if valid:
-                                    new_packet = Packet(packet.pac_type,
-                                                        packet.seqno,
-                                                        packet.data_len + random.randrange(0, 11),
-                                                        packet.data,
-                                                        packet.checksum)
-                                    data_in = pack_data(new_packet)
+                        else: # potentially introduce bit error
+                            data_in = bitError(data_in)
+
                         CRout.send(data_in)
                 else:
                     print("empty data packet received, finished")
@@ -155,8 +161,14 @@ def receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
                     header = get_header_object(data_in)
                     if header.magicno != 0x497E:
                         print("Receiver Packet magic number != 0x497E, dropping packet.\n")
-                    else:
-                        # Random variant for packet loss and bit errors to be implemented
+                    else: # potentially drop packet
+                        u = random.uniform(0, 1)
+                        if u < Precision:  # drop packet
+                            print("drop packet")
+                            continue
+                        else:  # potentially introduce bit error
+                            data_in = bitError(data_in)
+
                         CSout.send(data_in)
                 else:
                     # TODO does this ever get called?
