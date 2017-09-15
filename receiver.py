@@ -114,12 +114,16 @@ def read_and_write(Rin, Rout, file):
             elif rcvd.pac_type == 1:
                 print("Packet type not dataPacket, stop processing\n")
                 continue
-
-            acknowledge(Rout, rcvd.seqno, expected)
+            elif rcvd.seqno != expected:
+                acknowledge(Rout, rcvd.seqno, expected)
+                print("out of sequence")
+                continue
 
             if rcvd.data_len > 0:
                 print("Received valid data packet, writing...")
+                acknowledge(Rout, rcvd.seqno, expected)
                 file.write(rcvd.data)
+                expected = 1 - expected
             else:
                 print("Finished")
                 finished = True

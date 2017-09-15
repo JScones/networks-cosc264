@@ -97,6 +97,6 @@ def get_packet(in_data):
 
             packet = Packet(pac_type, seq_no, data_len, data, checksum)
 
-        valid_packet = packet.checksum == packet.calculate_checksum()
+            valid_packet = packet.checksum == packet.calculate_checksum()
 
     return packet, valid_packet

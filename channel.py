@@ -24,7 +24,7 @@ from helpers import *
 
 def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Precision):
     print("CHANNEL\n")
-    random.seed(5)
+    # random.seed(5)
 
     ports_ok = check_ports(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port)
 
@@ -117,7 +117,7 @@ def bitError(data_in):
         if valid:
             new_packet = Packet(packet.pac_type,
                                 packet.seqno,
-                                packet.data_len + random.randrange(0, 11),
+                                packet.data_len + int(random.uniform(1, 10)),
                                 packet.data,
                                 packet.checksum)
             data_in = pack_data(new_packet)
@@ -175,10 +175,10 @@ def receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
                     print("nothing received from receiver, done")
                     finished = True
                     break
-
+    print("Precision {}".format(Precision))
 
 if __name__ == '__main__':
-    channel(7001, 7002, 7003, 7004, 7005, 7007, 0.0)
+    channel(7001, 7002, 7003, 7004, 7005, 7007, 0.2)
     # uncomment below to get command line args working again
     """
     if len(sys.argv) != 8:
