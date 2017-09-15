@@ -1,16 +1,5 @@
 """ Sender program for Cosc264 Assignment
 
-    Does nothing yet.
-
-    CSin_port = 7001
-    CSout_port = 7002
-    CRin_port = 7003
-    CRout_port = 7004
-    Sin_port = 7005
-    Sout_port = 7006
-    Rin_port = 7007
-    Rout_port = 7008
-
     Authors: Josh Bernasconi 68613585
              James Toohey    27073776
 """
@@ -24,7 +13,8 @@ import time
 
 
 def sender(Sin_port, Sout_port, CSin_port, filename):
-    print("SENDER\n")
+    """ Checks ports, sets up connections, then hands over to the main loop """
+
     ports_ok = check_ports(Sin_port, Sout_port, CSin_port)
 
     if ports_ok:
@@ -40,7 +30,6 @@ def sender(Sin_port, Sout_port, CSin_port, filename):
     Sout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CSin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # TODO remove later, stops the already in use error
     Sin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     Sout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     CSin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -155,7 +144,15 @@ def check(Sin, Sout, count, data_packet, next, file, exit_flag):
     return count, next, exit_flag
 
 
-
 if __name__ == '__main__':
-    sender(7005, 7006, 7001, "51200.txt")
-    print(sys.argv)
+
+    if len(sys.argv) != 5:
+        print("Invalid command.")
+        print("Usage: sender.py [Sin port] [Sout port] [CSin port] input_filename")
+    else:
+        Sin = int(sys.argv[1])
+        Sout = int(sys.argv[2])
+        CSin = int(sys.argv[3])
+        filename = sys.argv[4]
+
+        sender(Sin, Sout, CSin, filename)

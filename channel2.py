@@ -1,14 +1,5 @@
 """ Channel program for Cosc264 Assignment
 
-    Does nothing yet.
-
-    CSin_port = 7001
-    CSout_port = 7002
-    CRin_port = 7003
-    CRout_port = 7004
-    Sin_port = 7005
-    Rin_port = 7006
-
     Authors: Josh Bernasconi 68613585
              James Toohey    27073776
 """
@@ -23,6 +14,7 @@ from helpers import *
 
 
 def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Precision):
+    """ Checks ports, sets up connections, then hands over to the main loop """
 
     ports_ok = check_ports(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port)
 
@@ -37,11 +29,6 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
     CSout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    CSin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    CSout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    CRin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    CRout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     # Bind
     try:  # Catching errors binding the ports
@@ -98,7 +85,7 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
         sys.exit()
 
     # Receive, select and send
-    receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision)
+    process(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision)
 
     CSin.close()
     CSout.close()
@@ -108,7 +95,7 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
 
 
 def bitError(data_in):
-    """Detects if the packet 'has a bit error'."""
+    """ Randomly adds/ doesn't add a bit error to the packet"""
     v = random.uniform(0, 1)
     if v < 0.1:
         print("bit error")
@@ -124,62 +111,46 @@ def bitError(data_in):
     return data_in
 
 
-def receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
+def process(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
     """Main infinite loop which receives and processes all packets. Then sends them to the destination"""
     finished = False
     while not finished:  # while CRin doesnt receive terminating packet
         readable, _, _ = select.select([CSin, CRin], [], []) # Blocking call for input
         for sock in readable:
             host, port = sock.getsockname()
-            if port == CSin_port:
-                data_in, address = sock.recvfrom(1024)
 
-                if len(data_in) != 0:
-                    header = get_header_object(data_in)
+            data_in, address = sock.recvfrom(1024)
 
-                    if header.magicno != 0x497E:
-                        print("Sender Packet magic number != 0x497E, dropping packet.\n")
+            if len(data_in) != 0:
+                header = get_header_object(data_in)
+
+                if header.magicno != 0x497E:
+                    print("Sender Packet magic number != 0x497E, dropping packet.\n")
+                    continue
+                else:  # potentially drop packet
+                    u = random.uniform(0, 1)
+                    if u < Precision:  # drop packet
+                        print("drop packet")
                         continue
-                    else: # potentially drop packet
-                        u = random.uniform(0, 1)
-                        if u < Precision:  # drop packet
-                            print("drop packet")
-                            continue
-                        else: # potentially introduce bit error
-                            data_in = bitError(data_in)
+                    else:  # potentially introduce bit error
+                        data_in = bitError(data_in)
 
+                    if port == CSin_port:
                         CRout.send(data_in)
-                else:
-                    print("empty data packet received, finished")
-                    finished = True
-                    break
-
-            elif port == CRin_port:
-                data_in, address = sock.recvfrom(1024)
-
-                if len(data_in) != 0:
-                    header = get_header_object(data_in)
-                    if header.magicno != 0x497E:
-                        print("Receiver Packet magic number != 0x497E, dropping packet.\n")
-                    else: # potentially drop packet
-                        u = random.uniform(0, 1)
-                        if u < Precision:  # drop packet
-                            print("drop packet")
-                            continue
-                        else:  # potentially introduce bit error
-                            data_in = bitError(data_in)
-
+                    elif port == CRin_port:
                         CSout.send(data_in)
-                else:
-                    # TODO does this ever get called?
-                    print("nothing received from receiver, done")
-                    finished = True
-                    break
+                    else:  # received from invalid port number
+                        print("Invalid port number")
+                        continue
+            else:
+                print("empty data packet received, finished")
+                finished = True
+                break
+
     print("Precision {}".format(Precision))
 
 if __name__ == '__main__':
-    #channel(7001, 7002, 7003, 7004, 7005, 7007, 0.0)
-    # uncomment below to get command line args working again
+
     if len(sys.argv) != 8:
         print("Invalid command.")
         print("Usage: channel.py [CSin port] [CSout port] [CRin port] [CRout port] {Sin port] [Rin port] [Precision]")

@@ -1,16 +1,5 @@
 """ Receiver program for Cosc264 Assignment
 
-    Does nothing yet.
-
-    CSin_port = 7001
-    CSout_port = 7002
-    CRin_port = 7003
-    CRout_port = 7004
-    Sin_port = 7005
-    Sout_port = 7006
-    Rin_port = 7007
-    Rout_port = 7008
-
     Authors: Josh Bernasconi 68613585
              James Toohey    27073776
 """
@@ -26,7 +15,8 @@ from packet import Packet
 
 
 def receiver(Rin_port, Rout_port, CRin_port, filename):
-    print("RECEIVER\n")
+    """ Checks ports, sets up connections, then hands over to the main loop """
+
     ports_ok = check_ports(Rin_port, Rout_port, CRin_port)
 
     if ports_ok:
@@ -46,7 +36,6 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
     Rout = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     CRin = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # TODO remove later, stops the already in use error
     Rin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     Rout.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     CRin.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -96,6 +85,7 @@ def receiver(Rin_port, Rout_port, CRin_port, filename):
 
 
 def read_and_write(Rin, Rout, file):
+    """ Receiver the packets, check validity, acknowledge, then write to file if valid """
     expected = 0
     finished = False
     while not finished:  # while the empty packet has not been found
@@ -129,7 +119,6 @@ def read_and_write(Rin, Rout, file):
                 finished = True
 
 
-
 def acknowledge(Rout, seqno, expected):
     """Creates appropriate acknowledgement packets and sends them through Rout."""
     if seqno != expected:
@@ -143,7 +132,14 @@ def acknowledge(Rout, seqno, expected):
         Rout.send(acknowledgement_packet)
 
 
-
 if __name__ == '__main__':
-    print(sys.argv)
-    receiver(7007, 7008, 7003, "out.txt")
+    if len(sys.argv) != 5:
+        print("Invalid command.")
+        print("Usage: receiver.py [Rin port] [Rout port] [CRin port] dest_filename")
+    else:
+        Rin = int(sys.argv[1])
+        Rout = int(sys.argv[2])
+        CRin = int(sys.argv[3])
+        filename = sys.argv[4]
+
+        receiver(Rin, Rout, CRin, filename)
