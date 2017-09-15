@@ -1,9 +1,7 @@
-""" A test class for packets.
-    Not too sure what I'm doing
+""" Packet Class for sender, receiver and channel.
 
-    Example usage:
-    packet1 = packet(0, 0, 512, "Testing some stuff")
-    print(hex(packet1.checksum))
+    Authors: Josh Bernasconi 68613585
+             James Toohey    27073776
     """
 
 

@@ -56,31 +56,6 @@ def get_data(packet, data_len):
     return data[0]
 
 
-def get_packets(in_data):
-    packets = []
-
-    while in_data != b'':
-        header = get_header(in_data)
-        checksum = header[1]
-        pac_type = header[2]
-        seq_no = header[3]
-        data_len = header[4]
-
-        if data_len >= len(in_data) - 20:
-            data = get_data(in_data, data_len)
-
-            temp_packet = Packet(pac_type, seq_no, data_len, data, checksum)
-            packets.append(temp_packet)
-
-            in_data = in_data[20 + data_len:]
-        else:
-            print("Incomplete packet")
-            in_data = b''
-
-    return packets
-
-
-
 def get_packet(in_data):
     valid_packet = False
     packet = None
