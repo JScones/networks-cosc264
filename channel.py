@@ -178,7 +178,7 @@ def receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
     print("Precision {}".format(Precision))
 
 if __name__ == '__main__':
-    channel(7001, 7002, 7003, 7004, 7005, 7007, 0.2)
+    channel(7001, 7002, 7003, 7004, 7005, 7007, 0.0)
     # uncomment below to get command line args working again
     """
     if len(sys.argv) != 8:
