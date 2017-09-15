@@ -109,7 +109,9 @@ def channel(CSin_port, CSout_port, CRin_port, CRout_port, Sin_port, Rin_port, Pr
     CRout.close()
     return None
 
+
 def bitError(data_in):
+    """Detects if the packet 'has a bit error'."""
     v = random.uniform(0, 1)
     if v < 0.1:
         print("bit error")
@@ -124,8 +126,9 @@ def bitError(data_in):
 
     return data_in
 
+
 def receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
-    """Big fuckoff function, will be refactored"""
+    """Main infinite loop which receives and processes all packets. Then sends them to the destination"""
     finished = False
     while not finished:  # while CRin doesnt receive terminating packet
         readable, _, _ = select.select([CSin, CRin], [], []) # Blocking call for input
@@ -178,9 +181,8 @@ def receive(CSin, CSout, CRin, CRout, CSin_port, CRin_port, Precision):
     print("Precision {}".format(Precision))
 
 if __name__ == '__main__':
-    channel(7001, 7002, 7003, 7004, 7005, 7007, 0.0)
+    #channel(7001, 7002, 7003, 7004, 7005, 7007, 0.0)
     # uncomment below to get command line args working again
-    """
     if len(sys.argv) != 8:
         print("Invalid command.")
         print("Usage: channel.py [CSin port] [CSout port] [CRin port] [CRout port] {Sin port] [Rin port] [Precision]")
@@ -194,4 +196,3 @@ if __name__ == '__main__':
         Precision = sys.argv[7]
 
         channel(CSin, CSout, CRin, CRout, Sin, Rin, Precision)
-    """
